@@ -111,12 +111,14 @@ class WgGesuchtCrawler:
 
     def retrieve_email_template(self):
         self.logger.info('Retrieving email template...')
-        print('https://www.wg-gesucht.de/mein-wg-gesucht-message-templates.html')
         template_page = self.get_page('https://www.wg-gesucht.de/mein-wg-gesucht-message-templates.html')
         
 
         soup = BeautifulSoup(template_page.content, 'html.parser')
-        template_text = soup.find('textarea', {'id': 'user_email_template'}).text
+        #print(soup.prettify())
+        #template_text = soup.find('textarea', {'id': 'user_email_template'}).text
+        template_text = soup.select('div.col-xs-8.col-md-9.truncate_title',limit=1)[0].text
+        #print(template_text)
 
         if not template_text:
             self.logger.warning("""
@@ -254,18 +256,18 @@ class WgGesuchtCrawler:
 
     def email_apartment(self, url, template_text):
         ad_info = self.get_info_from_ad(url)
-
         send_message_url = ad_info['ad_page_soup'].find('a', {'class': 'btn btn-block btn-md btn-orange'}).get('href')
-
+        print(send_message_url)
         submit_form_page = self.get_page(send_message_url)
         submit_form_page_soup = BeautifulSoup(submit_form_page.content, 'html.parser')
+        #print(submit_form_page_soup.prettify)
 
         headers = {
             'content-type': 'application/x-www-form-urlencoded',
             'cache-control': 'no-cache',
         }
 
-        payload = {
+        """ payload = {
             'nachricht': template_text,
             'u_anrede': list(filter(lambda x: x['value'] != '',
                                     submit_form_page_soup.find_all('option', selected=True)))[0]['value'],  # Title
@@ -276,24 +278,26 @@ class WgGesuchtCrawler:
             'kopieanmich': 'on',  # send copy to self
             'telefon': self.login_info['phone'],
             'csrf_token': submit_form_page_soup.find(attrs={'name': 'csrf_token'})['value']
-        }
+        } """
 
-        query_string = urllib.parse.urlencode(payload)
+        #query_string = urllib.parse.urlencode(payload)
 
-        try:
-            sent_message = self.session.post(send_message_url, data=query_string, headers=headers)
+        """ try:
+            #sent_message = self.session.post(send_message_url, data=query_string, headers=headers)
+            print('skipped')
         except requests.exceptions.Timeout:
             self.logger.exception('Timed out sending a message to %s, will try again next time', ad_info['ad_submitter'])
             return
 
         if 'erfolgreich kontaktiert' not in sent_message.text:
             self.logger.warning('Failed to send message to %s, will try again next time', ad_info['ad_submitter'])
-            return
+            return """
 
         self.update_files(url, ad_info)
         time_now = datetime.datetime.now().strftime('%H:%M:%S')
         self.logger.info('Message Sent to %s at %s!', ad_info['ad_submitter'], time_now)
-
+        print('File updated %s at %s!', ad_info['ad_submitter'], time_now)
+        
 
     def search(self):
         if self.counter < 2:
