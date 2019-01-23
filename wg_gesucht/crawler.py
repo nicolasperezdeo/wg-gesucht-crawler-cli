@@ -111,8 +111,9 @@ class WgGesuchtCrawler:
 
     def retrieve_email_template(self):
         self.logger.info('Retrieving email template...')
-
-        template_page = self.get_page('https://www.wg-gesucht.de/mein-wg-gesucht-message-template.html')
+        print('https://www.wg-gesucht.de/mein-wg-gesucht-message-templates.html')
+        template_page = self.get_page('https://www.wg-gesucht.de/mein-wg-gesucht-message-templates.html')
+        
 
         soup = BeautifulSoup(template_page.content, 'html.parser')
         template_text = soup.find('textarea', {'id': 'user_email_template'}).text
